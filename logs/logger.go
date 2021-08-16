@@ -57,9 +57,9 @@ func (l *logger) WithData(data interface{}) *logo.ProxyLogger {
 	return e.WithData(data)
 }
 
-func (l *logger) WithError(err error) *logo.ProxyLogger {
+func (l *logger) WithError(err error, hideCallStacks ...bool) *logo.ProxyLogger {
 	e := l.NewProxyLogger()
-	return e.WithError(err)
+	return e.WithError(err, hideCallStacks...)
 }
 
 func (l *logger) Debug(v ...interface{}) {

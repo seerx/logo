@@ -7,16 +7,17 @@ import (
 )
 
 type Entry struct {
-	File     string      `json:"file"`
-	Line     int         `json:"line"`
-	Time     time.Time   `json:"-"`     // 转换
-	TimeStr  string      `json:"time"`  //
-	Level    LogLevel    `json:"-"`     // 转换
-	LevelStr string      `json:"level"` //
-	Message  string      `json:"message"`
-	Data     interface{} `json:"data"`
-	Err      error       `json:"-"` // 转换
-	Error    string      `json:"error"`
+	File           string      `json:"file"`
+	Line           int         `json:"line"`
+	Time           time.Time   `json:"-"`     // 转换
+	TimeStr        string      `json:"time"`  //
+	Level          LogLevel    `json:"-"`     // 转换
+	LevelStr       string      `json:"level"` //
+	Message        string      `json:"message"`
+	Data           interface{} `json:"data"`
+	Err            error       `json:"-"` // 转换
+	hideCallStacks bool        `json:"-"` // 不需要输出
+	Error          string      `json:"error"`
 }
 
 type ProxyLogger struct {
@@ -30,31 +31,38 @@ func (e *ProxyLogger) WithData(data interface{}) *ProxyLogger {
 	e.entry.Data = data
 	return e
 }
-func (e *ProxyLogger) WithError(err error) *ProxyLogger {
+func (e *ProxyLogger) WithError(err error, hideCallStacks ...bool) *ProxyLogger {
 	e.entry.Err = err
+	if len(hideCallStacks) > 0 {
+		e.entry.hideCallStacks = hideCallStacks[0]
+	} else {
+		e.entry.hideCallStacks = false
+	}
 	return e
 }
+
 func (e *ProxyLogger) CleanProxyDataAndError() *ProxyLogger {
 	e.entry.Data = nil
 	e.entry.Err = nil
 	return e
 }
-func (e *ProxyLogger) SetProxyLevelAndTime(level LogLevel, tim time.Time) *ProxyLogger {
-	e.entry.Level = level
-	e.entry.Time = tim
-	return e
-}
-func (e *ProxyLogger) SetProxyMessagef(format string, v ...interface{}) *ProxyLogger {
-	e.entry.Message = fmt.Sprintf(format, v...)
-	return e
-}
-func (e *ProxyLogger) SetProxyMessage(v ...interface{}) *ProxyLogger {
-	e.entry.Message = fmt.Sprint(v...)
-	return e
-}
-func (e *ProxyLogger) GetEntry() *Entry {
-	return &e.entry
-}
+
+// func (e *ProxyLogger) SetProxyLevelAndTime(level LogLevel, tim time.Time) *ProxyLogger {
+// 	e.entry.Level = level
+// 	e.entry.Time = tim
+// 	return e
+// }
+// func (e *ProxyLogger) SetProxyMessagef(format string, v ...interface{}) *ProxyLogger {
+// 	e.entry.Message = fmt.Sprintf(format, v...)
+// 	return e
+// }
+// func (e *ProxyLogger) SetProxyMessage(v ...interface{}) *ProxyLogger {
+// 	e.entry.Message = fmt.Sprint(v...)
+// 	return e
+// }
+// func (e *ProxyLogger) GetEntry() *Entry {
+// 	return &e.entry
+// }
 
 // func (e *ProxyLogger) Logout(out LogPrinter, fmt Formatter) {
 // 	// plog.SetProxyLevelAndTime(level, time.Now())
@@ -80,7 +88,7 @@ func (e *ProxyLogger) ProxyLog(level LogLevel, callDepth int, v ...interface{}) 
 		}
 	}
 
-	if e.entry.Err != nil {
+	if e.entry.Err != nil && !e.entry.hideCallStacks {
 		stack := e.Logger.GetCallStack()
 		if stack != nil {
 			e.entry.Err = stack.WrapErrorSkip(e.entry.Err, 2)
@@ -91,7 +99,7 @@ func (e *ProxyLogger) ProxyLog(level LogLevel, callDepth int, v ...interface{}) 
 	printer := e.Logger.GetPrinter(level)
 	msg, err := fmt(&e.entry)
 	if err != nil {
-		e.WithError(err).Error("log format error")
+		e.WithError(err, false).Error("log format error")
 		return
 	}
 	printer.Print(msg, e.IsColorLog())
@@ -111,7 +119,7 @@ func (e *ProxyLogger) ProxyLogf(level LogLevel, callDepth int, format string, v 
 		}
 	}
 
-	if e.entry.Err != nil {
+	if e.entry.Err != nil && !e.entry.hideCallStacks {
 		stack := e.Logger.GetCallStack()
 		if stack != nil {
 			e.entry.Err = stack.WrapErrorSkip(e.entry.Err, 2)
@@ -122,7 +130,7 @@ func (e *ProxyLogger) ProxyLogf(level LogLevel, callDepth int, format string, v 
 	printer := e.Logger.GetPrinter(level)
 	msg, err := fmt(&e.entry)
 	if err != nil {
-		e.WithError(err).Error("log format error")
+		e.WithError(err, false).Error("log format error")
 		return
 	}
 	printer.Print(msg, e.IsColorLog())

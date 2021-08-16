@@ -19,8 +19,8 @@ func GetDefaultLogger() logo.Logger {
 	return instance
 }
 
-func WithError(err error) *logo.ProxyLogger {
-	return GetDefaultLogger().WithError(err)
+func WithError(err error, hideCallStacks ...bool) *logo.ProxyLogger {
+	return GetDefaultLogger().WithError(err, hideCallStacks...)
 }
 
 func WithData(data interface{}) *logo.ProxyLogger {

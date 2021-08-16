@@ -4,7 +4,7 @@ import "github.com/seerx/logo/tools"
 
 type Logger interface {
 	WithData(data interface{}) *ProxyLogger
-	WithError(err error) *ProxyLogger
+	WithError(err error, hideCallStacks ...bool) *ProxyLogger
 	Debug(v ...interface{})
 	Debugf(format string, v ...interface{})
 	Info(v ...interface{})
